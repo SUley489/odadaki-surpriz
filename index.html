@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Odadaki Sürpriz</title>
+<style>
+:root{
+  --bg:#1e1730; --wall:#36284a; --wall2:#473460; --wood:#6a4530; --wood2:#8f623c;
+  --gold:#e8c27a; --text:#f3e9ff; --accent:#c98fe0; --danger:#e07a7a; --ok:#7ae0a0;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  overflow:hidden; -webkit-user-select:none; user-select:none;
+}
+#app{position:relative; width:100%; height:100vh; height:100dvh; overflow:hidden;}
+
+/* ---------- KOD GİRİŞ EKRANI ---------- */
+.screen{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:24px; text-align:center;}
+.hidden{display:none !important;}
+.lock-icon{font-size:48px; margin-bottom:12px;}
+.screen h1{font-size:20px; font-weight:600; margin:0 0 6px;}
+.screen p{color:#cbb8e0; font-size:14px; margin:0 0 18px; max-width:280px;}
+input.code-input{
+  background:#2a1d3d; border:1px solid #4a3465; color:var(--gold); font-size:22px;
+  letter-spacing:8px; text-align:center; border-radius:12px; padding:12px 16px; width:200px; outline:none;
+}
+button.primary{
+  margin-top:16px; background:linear-gradient(135deg,var(--accent),#8a5cc4); color:#fff; border:none;
+  padding:12px 28px; border-radius:24px; font-size:15px; font-weight:600; box-shadow:0 4px 14px rgba(138,92,196,.4);
+}
+button.primary:active{transform:scale(.97);}
+.error-msg{color:var(--danger); font-size:13px; margin-top:10px; min-height:16px;}
+
+/* ---------- ODA SAHNESİ (3 DUVAR) ---------- */
+#room{position:absolute; inset:0; overflow:hidden;}
+#walls-track{position:absolute; top:0; bottom:0; left:0; width:300%; display:flex; transition:transform .45s cubic-bezier(.4,0,.2,1);}
+.wall{position:relative; width:33.333%; height:100%; background:linear-gradient(180deg,var(--wall) 0%, var(--wall2) 55%, #241a3a 55%, #1c1430 100%); box-shadow:inset 0 0 70px rgba(0,0,0,.3);}
+.wall::after{content:""; position:absolute; left:0; right:0; bottom:12%; height:1px; background:rgba(255,255,255,.06);}
+
+.window{position:absolute; top:9%; left:50%; transform:translateX(-50%); width:38%; max-width:170px; aspect-ratio:3/2;
+  background:linear-gradient(180deg,#0d1a3a,#1b2a55); border:6px solid var(--wood2); border-radius:6px; box-shadow:inset 0 0 20px rgba(0,0,0,.5); overflow:hidden;}
+.window .sky{position:absolute; inset:0; background:linear-gradient(180deg,#0c1638 0%,#233a6e 35%,#5a4a86 62%,#7a5a8a 78%,#3a2848 100%);}
+.window .star{position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:.8; animation:twinkle 2.4s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.3;}50%{opacity:1;}}
+.window .moon{position:absolute; top:10%; right:14%; font-size:15px; filter:drop-shadow(0 0 4px rgba(255,255,220,.6));}
+.mtn{position:absolute; bottom:0; background:#2a2140;}
+.mtn.big{left:4%; width:68%; height:64%; clip-path:polygon(46% 0%,100% 100%,0% 100%);}
+.mtn.small{right:0%; width:48%; height:44%; clip-path:polygon(55% 0%,100% 100%,4% 100%); background:#20182f;}
+.mtn.big .snow{position:absolute; top:0; left:30%; right:30%; height:26%; background:linear-gradient(180deg,#f2eefa,#cfc3e6); clip-path:polygon(50% 0%,100% 100%,0% 100%);}
+.mtn.small .snow{position:absolute; top:0; left:32%; right:32%; height:24%; background:linear-gradient(180deg,#eee8fa,#c9bde0); clip-path:polygon(50% 0%,100% 100%,0% 100%);}
+.window .peak{position:absolute; bottom:6%; left:50%; transform:translateX(-50%); font-size:10px; color:#e8ddf5; opacity:.85; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap; z-index:2;}
+
+.obj{position:absolute; cursor:pointer; transition:transform .15s;}
+.obj:active{transform:scale(.95);}
+.glow{animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 2px var(--gold));}50%{filter:drop-shadow(0 0 10px var(--gold));}}
+
+.bed{position:absolute; bottom:15%; width:20%; max-width:88px; height:26%;}
+.bed .shadow{position:absolute; bottom:-4%; left:-6%; right:-6%; height:14%; background:radial-gradient(ellipse,rgba(0,0,0,.45),transparent 70%);}
+.bed .headboard{position:absolute; top:0; left:6%; right:6%; height:22%; background:linear-gradient(180deg,var(--wood2),var(--wood)); border-radius:8px 8px 0 0; box-shadow:0 2px 4px rgba(0,0,0,.3);}
+.bed .mattress{position:absolute; top:16%; left:0; right:0; bottom:18%; background:linear-gradient(180deg,#3a2c52,#2c2140); border-radius:5px;}
+.bed .quilt{position:absolute; top:32%; left:2%; right:2%; bottom:18%; background:linear-gradient(160deg,#8a5cc4,#6a3fa0); border-radius:6px; box-shadow:inset 0 -6px 10px rgba(0,0,0,.2), inset 0 4px 6px rgba(255,255,255,.08);}
+.bed .quilt::after{content:""; position:absolute; top:18%; left:10%; right:10%; height:2px; background:rgba(255,255,255,.15); box-shadow:0 14px 0 rgba(255,255,255,.1);}
+.bed .pillow{position:absolute; top:18%; left:10%; width:44%; height:20%; background:linear-gradient(160deg,#f3e9ff,#e0d0f5); border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,.25);}
+.bed .legs{position:absolute; bottom:-6%; left:8%; right:8%; height:8%;}
+.bed .legs::before, .bed .legs::after{content:""; position:absolute; bottom:0; width:6%; height:100%; background:#2a1810; border-radius:0 0 2px 2px;}
+.bed .legs::before{left:0;} .bed .legs::after{right:0;}
+.bed1{left:3%;} .bed2{left:26%;} .bed3{left:53%;} .bed4{left:76%;}
+
+.phone{position:absolute; bottom:36%; left:24%; width:20px; height:36px; background:linear-gradient(160deg,#ff9fd0,#e05ea8);
+  border-radius:5px; border:1px solid #ffd0ea; z-index:5; box-shadow:0 0 8px rgba(255,159,208,.6);}
+
+.door{position:absolute; top:16%; left:50%; transform:translateX(-50%); width:26%; max-width:106px; height:62%;
+  background:linear-gradient(100deg,#6a4526 0%,#7a5230 15%,#5a3a20 50%,#7a5230 85%,#6a4526 100%);
+  border-radius:5px 5px 0 0; border:3px solid #3a2515; box-shadow:0 8px 20px rgba(0,0,0,.5), inset 0 0 0 3px rgba(0,0,0,.15);}
+.door .frame{position:absolute; inset:-8px; border:8px solid #4a3020; border-radius:6px 6px 0 0; z-index:-1; box-shadow:0 10px 24px rgba(0,0,0,.5);}
+.door .panel{position:absolute; left:12%; right:12%; height:40%; border-radius:3px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.35), inset 0 2px 4px rgba(255,255,255,.1), inset 0 -3px 6px rgba(0,0,0,.35);}
+.door .panel.top{top:8%;} .door .panel.bottom{bottom:8%;}
+.door .handle{position:absolute; right:10%; top:50%; width:10px; height:22px; background:linear-gradient(160deg,var(--gold),#a8843e); border-radius:5px; box-shadow:0 2px 4px rgba(0,0,0,.5);}
+
+.radiator{position:absolute; bottom:22%; left:8%; width:22%; max-width:84px; height:16%;
+  background:linear-gradient(180deg,#9a9aad,#7a7a8c); border-radius:4px; box-shadow:0 6px 10px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.2);}
+.radiator .fins{position:absolute; inset:10% 6%; background:repeating-linear-gradient(90deg,#c4c4d4 0 4px,#84849a 4px 5px,#6a6a80 5px 6px); border-radius:2px; box-shadow:inset 0 2px 3px rgba(255,255,255,.15), inset 0 -2px 3px rgba(0,0,0,.3);}
+.radiator .legs{position:absolute; bottom:-14%; left:14%; right:14%; height:14%;}
+.radiator .legs::before, .radiator .legs::after{content:""; position:absolute; bottom:0; width:8%; height:100%; background:#4a4a58;}
+.radiator .legs::before{left:4%;} .radiator .legs::after{right:4%;}
+.radiator .glow{position:absolute; inset:-30%; background:radial-gradient(ellipse,rgba(255,150,80,.18),transparent 70%);}
+
+.desk{position:absolute; bottom:14%; right:8%; width:38%; max-width:170px; height:40%;}
+.desk .shadow{position:absolute; bottom:-2%; left:-4%; right:-4%; height:12%; background:radial-gradient(ellipse,rgba(0,0,0,.4),transparent 70%);}
+.desk .top{position:absolute; bottom:26%; left:0; right:0; height:14%; background:linear-gradient(160deg,#8a6038,var(--wood2)); border-radius:4px; box-shadow:0 4px 6px rgba(0,0,0,.3);}
+.desk .top::after{content:""; position:absolute; inset:0; border-radius:4px; box-shadow:inset 0 3px 0 rgba(255,255,255,.12);}
+.desk .leg{position:absolute; bottom:0; width:8%; height:28%; background:var(--wood);}
+.desk .leg.l{left:6%;} .desk .leg.r{right:6%;}
+.books{position:absolute; bottom:40%; left:6%; right:10%; height:26%; display:flex; align-items:flex-end; gap:3px; z-index:2;}
+.book{flex:1; height:78%; border-radius:2px 4px 0 0; box-shadow:1px 0 0 rgba(0,0,0,.2), inset -2px 0 3px rgba(0,0,0,.15); position:relative; display:flex; align-items:flex-start; justify-content:center; padding-top:6px;}
+.book span{font-size:10px; font-weight:700; color:rgba(0,0,0,.55); text-shadow:0 1px 0 rgba(255,255,255,.2); letter-spacing:.5px;}
+.book:nth-child(2){height:92%;} .book:nth-child(3){height:65%;} .book:nth-child(4){height:100%;}
+.book1{background:linear-gradient(160deg,#d95a5a,#a03030);} .book2{background:linear-gradient(160deg,#5a8fd9,#2c5ca0);}
+.book3{background:linear-gradient(160deg,#5ad98f,#2c9a5c);} .book4{background:linear-gradient(160deg,#e0c060,#b08c20);}
+
+.clock{position:absolute; top:12%; left:10%; width:64px; height:64px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#4a3868,#241834); border:4px solid var(--gold); box-shadow:0 6px 14px rgba(0,0,0,.5), inset 0 0 8px rgba(0,0,0,.5);}
+.clock .tick{position:absolute; width:2px; height:6px; background:rgba(232,194,122,.6); left:50%; top:4%; transform-origin:1px 28px;}
+.clock .hand{position:absolute; left:50%; bottom:50%; background:var(--gold); transform-origin:bottom center; border-radius:2px;}
+.clock .hand.hr{width:3px; height:16px; transform:translateX(-50%) rotate(198deg);}
+.clock .hand.min{width:2px; height:22px; transform:translateX(-50%) rotate(144deg);}
+.clock .pin{position:absolute; left:50%; top:50%; width:5px; height:5px; background:var(--gold); border-radius:50%; transform:translate(-50%,-50%);}
+
+.safe{position:absolute; bottom:16%; right:12%; width:19%; max-width:66px; height:11%;
+  background:linear-gradient(160deg,#5a4a3a,#3a2e22); border-radius:4px; box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.1);}
+.safe .dial{position:absolute; left:14%; top:50%; transform:translateY(-50%); width:34%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#c8b878,#8a7838); box-shadow:0 2px 4px rgba(0,0,0,.5);}
+.safe .handle{position:absolute; right:12%; top:50%; transform:translateY(-50%); width:22%; height:36%; background:linear-gradient(160deg,#c8b878,#8a7838); border-radius:3px; box-shadow:0 2px 3px rgba(0,0,0,.4);}
+.safe .rivet{position:absolute; width:4px; height:4px; background:#8a7838; border-radius:50%;}
+
+.hint{position:absolute; bottom:2%; left:50%; transform:translateX(-50%); font-size:12px; color:#a894c4; text-align:center; width:90%; z-index:2;}
+
+/* ---------- GEZİNME OKLARI ---------- */
+.nav-arrow{position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%;
+  background:rgba(30,20,45,.7); border:1px solid #4a3465; color:var(--gold); font-size:20px; z-index:30;
+  display:flex; align-items:center; justify-content:center;}
+.nav-arrow:disabled{opacity:.25;}
+#arrow-left{left:10px;} #arrow-right{right:10px;}
+#wall-dots{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:20;}
+.dot{width:7px; height:7px; border-radius:50%; background:#4a3465;}
+.dot.active{background:var(--gold);}
+
+/* ---------- ENVANTER ---------- */
+#inventory{position:absolute; top:calc(env(safe-area-inset-top,0px) + 8px); right:8px; background:rgba(20,14,32,.8); border-radius:14px; padding:6px 10px; font-size:20px; display:flex; gap:6px; z-index:20;}
+#progress-dots{position:absolute; top:calc(env(safe-area-inset-top,0px) + 8px); left:8px; background:rgba(20,14,32,.8); border-radius:14px; padding:6px 10px; font-size:15px; display:flex; gap:7px; z-index:20;}
+#progress-dots span{opacity:.3; filter:grayscale(1); transition:all .4s;}
+#progress-dots span.done{opacity:1; filter:none; text-shadow:0 0 6px rgba(232,194,122,.7);}
+.hint-link{display:inline-block; margin-top:8px; font-size:12px; color:var(--accent); text-decoration:underline; background:none; border:none;}
+.hint-text{font-size:12.5px; color:#bba8d4; margin-top:8px; display:none;}
+.hint-text.show{display:block;}
+#flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:90; transition:opacity .45s ease;}
+
+/* ---------- MODAL ---------- */
+#modal-overlay{position:absolute; inset:0; background:rgba(10,6,18,.88); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
+#modal{background:#241934; border:1px solid #4a3465; border-radius:18px; padding:22px 20px; max-width:320px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+#modal .icon{font-size:36px; margin-bottom:10px;}
+#modal .msg{font-size:15px; line-height:1.5; white-space:pre-line; margin-bottom:14px;}
+#modal .paper{background:#2f2140; border-radius:10px; padding:14px; font-style:italic; font-size:14px; margin-bottom:14px; border:1px dashed var(--gold);}
+
+/* ---------- TELEFON EKRANI (MODAL İÇİ) ---------- */
+.phone-mock{width:190px; height:370px; margin:0 auto 14px; background:linear-gradient(165deg,#241a3a,#150f24); border-radius:34px;
+  border:3px solid #3a2a55; position:relative; padding-top:18px; box-shadow:0 14px 30px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.03); overflow:hidden;}
+.phone-mock::before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:70px; height:20px; background:#0d0818; border-radius:0 0 14px 14px;}
+.phone-mock .status{position:absolute; top:6px; left:16px; right:16px; display:flex; justify-content:space-between; font-size:10px; color:#c9b8e0; opacity:.8;}
+.phone-mock .wallpaper{position:absolute; inset:0; background:radial-gradient(circle at 30% 20%,rgba(201,143,224,.25),transparent 55%), radial-gradient(circle at 70% 80%,rgba(122,79,160,.3),transparent 55%);}
+.phone-mock .time{position:relative; text-align:center; font-size:46px; font-weight:300; margin-top:56px; letter-spacing:1px;}
+.phone-mock .date{position:relative; text-align:center; font-size:12px; color:#c9b8e0; margin-top:4px;}
+.phone-mock .lockrow{position:relative; text-align:center; margin-top:70px; font-size:22px; opacity:.85;}
+.phone-mock .swipe{position:relative; text-align:center; font-size:11px; color:#9884b0; margin-top:8px;}
+.notif-bubble{position:relative; margin:14px 14px 0; background:rgba(30,20,45,.92); border-radius:12px; padding:10px 12px; font-size:12.5px; text-align:left; line-height:1.4; border:1px solid rgba(255,255,255,.08);}
+#modal input.code-input{width:150px; font-size:20px;}
+#modal .row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:6px;}
+.btn-secondary{background:#3a2a52; color:var(--text); border:none; padding:10px 20px; border-radius:20px; font-size:14px;}
+.close-x{position:absolute; top:10px; right:14px; font-size:20px; color:#9884b0; background:none; border:none;}
+#modal{position:relative;}
+
+/* ---------- İLERLEDİKÇE AYDINLANMA ---------- */
+#light-overlay{position:absolute; inset:0; background:radial-gradient(ellipse at 50% 30%,rgba(255,220,180,.08),#000 72%); opacity:.3; pointer-events:none; transition:opacity 1.2s ease; z-index:1;}
+
+/* ---------- SALLANMA (yanlış kod) ---------- */
+@keyframes shake{10%,90%{transform:translateX(-3px);}20%,80%{transform:translateX(5px);}30%,50%,70%{transform:translateX(-8px);}40%,60%{transform:translateX(8px);}}
+.shake{animation:shake .5s;}
+
+/* ---------- KONFETİ ---------- */
+.confetti{position:absolute; top:-10%; width:8px; height:14px; opacity:.9; animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(115vh) rotate(360deg);}}
+/* ---------- SÜRPRİZ KAZANI ---------- */
+.cauldron-wrap{position:absolute; inset:0; background:radial-gradient(circle at 50% 18%,#2a1f45,#140d22 70%); display:flex; flex-direction:column; align-items:center; padding:20px; text-align:center; overflow-y:auto;}
+.pot{width:150px; height:108px; position:relative; margin:18px auto 8px;}
+.pot .body{position:absolute; bottom:0; left:0; right:0; height:82%; background:linear-gradient(160deg,#3a3a4a,#1c1c26); border-radius:0 0 54px 54px; box-shadow:0 10px 22px rgba(0,0,0,.5), inset 0 -10px 14px rgba(0,0,0,.4);}
+.pot .rim{position:absolute; top:0; left:-6%; right:-6%; height:18px; background:linear-gradient(160deg,#5a5a6e,#34343f); border-radius:50%; box-shadow:0 3px 6px rgba(0,0,0,.4);}
+.pot .potglow{position:absolute; inset:-25%; border-radius:50%; background:radial-gradient(circle,rgba(255,200,120,.4),transparent 70%); opacity:0; transition:opacity .4s;}
+.pot.active .potglow{opacity:1; animation:potpulse 1.3s ease-in-out infinite;}
+@keyframes potpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+#pot-icons{position:absolute; left:14%; right:14%; bottom:12%; top:38%; display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:center; gap:4px; font-size:18px; pointer-events:none; z-index:3;}
+.pot-icon{animation:dropIn .45s cubic-bezier(.3,1.4,.6,1); filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));}
+@keyframes dropIn{from{transform:translateY(-40px) scale(.4); opacity:0;} to{transform:translateY(0) scale(1); opacity:1;}}
+
+#pot-combo{position:absolute; left:50%; top:-58%; transform:translateX(-50%); z-index:5; pointer-events:none; display:none; align-items:center; justify-content:center;}
+.combo-badge{position:relative; display:flex; align-items:center; justify-content:center; width:92px; height:98px; animation:comboPop .5s cubic-bezier(.3,1.5,.5,1), comboFloat 2.6s ease-in-out infinite .5s;}
+.combo-badge .ambhalo{position:absolute; inset:-10%; border-radius:50%; background:radial-gradient(circle,rgba(255,215,140,.45),rgba(201,143,224,.2) 55%,transparent 75%); filter:blur(3px); animation:haloPulse 1.8s ease-in-out infinite;}
+#char{position:relative; width:72px; height:84px; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));}
+#char .eyes-closed, #char .zzz, #char .sparkle, #char .halo-ring, #char .wings, #char .heart-boot{display:none;}
+#pot-combo.has-S #char .eyes-open{display:none;}
+#pot-combo.has-S #char .eyes-closed{display:block;}
+#pot-combo.has-S #char .zzz{display:block;}
+#pot-combo.has-E #char .book{display:block;}
+#pot-combo.has-H #char .plain-boot{display:none;}
+#pot-combo.has-H #char .heart-boot{display:block;}
+#pot-combo.has-B #char .sparkle{display:block;}
+#pot-combo.has-B #char .blush{opacity:1;}
+#pot-combo.has-G #char .halo-ring{display:block;}
+#pot-combo.has-G #char .wings{display:block;}
+#char .zzz text{animation:zzzFloat 1.8s ease-in-out infinite;}
+@keyframes zzzFloat{0%,100%{opacity:.4; transform:translateY(0);} 50%{opacity:1; transform:translateY(-3px);}}
+@keyframes comboPop{0%{transform:scale(.25) rotate(-10deg); opacity:0;} 65%{transform:scale(1.1) rotate(3deg); opacity:1;} 100%{transform:scale(1) rotate(0);}}
+@keyframes comboFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);}}
+@keyframes haloPulse{0%,100%{opacity:.5; transform:scale(1);} 50%{opacity:.85; transform:scale(1.1);}}
+.items-row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; max-width:280px;}
+.item-chip{width:54px; height:54px; border-radius:50%; background:linear-gradient(160deg,#3a2a52,#241834); border:2px solid #5a3f80; display:flex; align-items:center; justify-content:center; font-size:22px; touch-action:none; cursor:grab; box-shadow:0 4px 10px rgba(0,0,0,.4); user-select:none;}
+.item-chip.used{opacity:.22; pointer-events:none;}
+.item-chip.dragging{cursor:grabbing; z-index:200;}
+.result-card{margin-top:14px; background:rgba(255,255,255,.06); border:1px solid rgba(232,194,122,.35); border-radius:14px; padding:12px 16px; max-width:270px; font-size:13.5px; min-height:18px; line-height:1.5;}
+#finale{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 35%,#5a2a6a,#160a24 75%); text-align:center; padding:20px; z-index:40;}
+#finale h1{position:relative; font-size:26px; color:var(--gold); text-shadow:0 0 24px rgba(232,194,122,.7); margin-top:10px;}
+.burst{width:120px; height:120px; border-radius:50%; background:radial-gradient(circle,#fff,#ffd98a 40%,transparent 70%); position:absolute; opacity:0; animation:burst .9s ease-out forwards;}
+@keyframes burst{0%{opacity:0; transform:scale(.2);} 40%{opacity:1;} 100%{opacity:0; transform:scale(3.4);}}
+
+#final{position:absolute; inset:0; background:radial-gradient(circle at 50% 30%,#4a1a5a,#1a0a24 75%); display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:24px;}
+#final h1{font-size:28px; color:var(--gold); text-shadow:0 0 20px rgba(232,194,122,.6); margin-bottom:12px;}
+#final p{color:#e8d8f8; font-size:15px; max-width:300px; line-height:1.6;}
+.balloon{position:absolute; font-size:28px; animation:float 6s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-18px);}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- KOD GİRİŞ EKRANI -->
+  <!-- ANA MENÜ -->
+  <div id="screen-menu" class="screen">
+    <div class="lock-icon">🎁</div>
+    <h1>Sana Küçük Bir Şey Hazırladım</h1>
+    <p>Hangisine bakmak istersin?</p>
+    <button class="primary" onclick="goTo('screen-entry')">🚪 Odaya Gir</button>
+    <button class="primary" style="margin-top:12px; background:linear-gradient(135deg,#e07ab0,#c94f8a);" onclick="goTo('cauldron'); resetCauldron();">🎁 Sürpriz Kazanı</button>
+  </div>
+
+  <div id="screen-entry" class="screen hidden">
+    <button class="close-x" style="position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); left:16px; color:#9884b0;" onclick="goTo('screen-menu')">← Menü</button>
+    <div class="lock-icon">🔐</div>
+    <h1>BU ODA SANA ÖZEL</h1>
+    <p>Buraya girmek için özel kodunu gir.</p>
+    <input id="entry-input" class="code-input" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+    <button class="primary" onclick="checkEntry()">GİR</button>
+    <div class="error-msg" id="entry-error"></div>
+  </div>
+
+  <!-- BAŞLANGIÇ EKRANI -->
+  <div id="screen-start" class="screen hidden">
+    <div class="lock-icon">🎁</div>
+    <h1>Odadaki Sürpriz</h1>
+    <p>Küçük bir şey hazırladım. Ama bu sefer biraz uğraşman gerekecek 👀</p>
+    <button class="primary" onclick="enterRoom()">ODAYA GİR</button>
+  </div>
+
+  <!-- ODA -->
+  <div id="room" class="hidden">
+    <div id="light-overlay"></div>
+    <div id="inventory"></div>
+    <div id="progress-dots"></div>
+    <div id="wall-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+
+    <div id="walls-track">
+      <!-- DUVAR 1: Cam + Yataklar + Telefon -->
+      <div class="wall">
+        <div class="window">
+          <div class="sky">
+            <span class="star" style="top:14%;left:20%; animation-delay:.2s;"></span>
+            <span class="star" style="top:22%;left:70%; animation-delay:1s;"></span>
+            <span class="star" style="top:10%;left:45%; animation-delay:.6s;"></span>
+            <span class="star" style="top:30%;left:85%; animation-delay:1.4s;"></span>
+            <span class="star" style="top:8%;left:10%; animation-delay:1.8s;"></span>
+            <span class="moon">🌙</span>
+            <div class="mtn big"><div class="snow"></div></div>
+            <div class="mtn small"><div class="snow"></div></div>
+          </div>
+          <span class="peak">Ağrı Dağı · Iğdır</span>
+        </div>
+        <div class="bed bed1"><div class="shadow"></div><div class="headboard"></div><div class="mattress"></div><div class="pillow"></div><div class="quilt"></div><div class="legs"></div></div>
+        <div class="bed obj bed2" onclick="bedMessage()"><div class="shadow"></div><div class="headboard"></div><div class="mattress"></div><div class="pillow"></div><div class="quilt"></div><div class="legs"></div>
+          <div class="obj phone glow" onclick="event.stopPropagation(); openPhone()"></div>
+        </div>
+        <div class="bed bed3"><div class="shadow"></div><div class="headboard"></div><div class="mattress"></div><div class="pillow"></div><div class="quilt"></div><div class="legs"></div></div>
+        <div class="bed bed4"><div class="shadow"></div><div class="headboard"></div><div class="mattress"></div><div class="pillow"></div><div class="quilt"></div><div class="legs"></div></div>
+        <div class="hint">Yataklardan birinde parlayan bir şey var ✨</div>
+      </div>
+
+      <!-- DUVAR 2: Saat + Kalorifer + Masa + Kitaplar + Kasa -->
+      <div class="wall">
+        <div class="obj clock" onclick="openClock()">
+          <div class="hand hr"></div><div class="hand min"></div><div class="pin"></div>
+        </div>
+        <div class="obj radiator" onclick="openRadiator()"><div class="glow"></div><div class="fins"></div><div class="legs"></div></div>
+        <div class="obj desk" onclick="openBooks()">
+          <div class="shadow"></div>
+          <div class="books">
+            <div class="book book1"><span>C2</span></div><div class="book book2"><span>A7</span></div><div class="book book3"><span>A0</span></div><div class="book book4"><span>C8</span></div>
+          </div>
+          <div class="top"></div>
+          <div class="leg l"></div><div class="leg r"></div>
+        </div>
+        <div class="obj safe" onclick="openSafe()"><div class="dial"></div><div class="handle"></div></div>
+        <div class="hint">Saat, kalorifer, masa... hepsine bak</div>
+      </div>
+
+      <!-- DUVAR 3: Kapı -->
+      <div class="wall">
+        <div class="obj door" onclick="openDoor()"><div class="frame"></div><div class="panel top"></div><div class="panel bottom"></div><div class="handle"></div></div>
+        <div class="hint">Anahtarı bulunca kapıyı açabilirsin</div>
+      </div>
+    </div>
+
+    <button id="arrow-left" class="nav-arrow" onclick="goWall(-1)">‹</button>
+    <button id="arrow-right" class="nav-arrow" onclick="goWall(1)">›</button>
+    <button id="lamp-btn" class="nav-arrow" style="top:auto; bottom:14px; left:10px; width:38px; height:38px; font-size:16px;" onclick="toggleLamp()">💡</button>
+  </div>
+
+  <div id="flash"></div>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal"></div>
+  </div>
+
+  <!-- SÜRPRİZ KAZANI -->
+  <div id="cauldron" class="hidden" style="position:absolute; inset:0;">
+    <div class="cauldron-wrap">
+      <button class="close-x" style="position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); left:16px; color:#9884b0;" onclick="goTo('screen-menu')">← Menü</button>
+      <h1 style="font-size:18px; margin-top:28px;">🎁 Sürpriz Kazanı</h1>
+      <p style="color:#cbb8e0; font-size:12.5px; max-width:260px;">Maddeleri sürükleyip kazana at, her kombinasyon farklı bir şey ortaya çıkarır ✨</p>
+      <div class="pot" id="pot"><div class="potglow"></div><div class="rim"></div><div class="body"></div><div id="pot-icons"></div><div id="pot-combo"></div></div>
+      <div class="result-card" id="cauldron-result">Kazan boş... bir şeyler at! 👀</div>
+      <div class="items-row" id="items-row">
+        <div class="item-chip" data-key="S">😴</div>
+        <div class="item-chip" data-key="E">🇬🇧</div>
+        <div class="item-chip" data-key="H">❤️</div>
+        <div class="item-chip" data-key="B">💄</div>
+        <div class="item-chip" data-key="G">😇</div>
+      </div>
+      <button class="btn-secondary" style="margin-top:16px;" onclick="resetCauldron()">↺ Baştan başla</button>
+    </div>
+    <div id="finale" class="hidden"></div>
+  </div>
+
+  <!-- FİNAL -->
+  <div id="final" class="hidden">
+    <span class="balloon" style="left:12%; top:18%;">🎈</span>
+    <span class="balloon" style="right:14%; top:22%; animation-delay:1s;">🎈</span>
+    <span class="balloon" style="left:20%; bottom:20%; animation-delay:2s;">🎈</span>
+    <span class="balloon" style="right:18%; bottom:24%; animation-delay:.5s;">🎈</span>
+    <div style="font-size:44px;">🎂✨</div>
+    <h1>İYİ Kİ DOĞDUN ❤️</h1>
+    <p>Bu odada bir sürü anı biriktirdin.<br>Şimdi bir yenisini daha ekleyelim.</p>
+    <div id="letter" class="hidden" style="background:rgba(255,255,255,.06); border:1px solid rgba(232,194,122,.4); border-radius:14px; padding:16px; margin-top:16px; max-width:290px; font-size:14px; line-height:1.7; color:#f3e9ff; text-align:left;">
+      Bu odanın içindeki her eşya sende bir anı sakladığı için seçildi.<br><br>
+      Telefon, saat, kalorifer, masadaki kitaplar, kasa... hepsi senin geçirdiğin küçük anların bir parçası.<br><br>
+      İyi ki doğdun, iyi ki varsın. ❤️<br><br>
+      <span style="display:block; text-align:center; font-size:16px; letter-spacing:1px;">どんなことがあっても、強くあれ。</span>
+      <span style="display:block; text-align:center; font-size:11px; color:#bba8d4; margin-top:4px;">"Ne olursa olsun, güçlü ol."</span>
+    </div>
+    <button class="primary" style="margin-top:18px;" onclick="showLetter()">💌 Mektubu Oku</button>
+    <button class="btn-secondary" style="margin-top:10px;" onclick="goTo('screen-menu')">
+  ↩️ Ana Menüye Dön
+</button>
+  </div>
+
+</div>
+
+<script>
+/* ============ AYARLAR ============ */
+/* Buradaki kodu diğerlerine göre değiştir. Örn: doğum günü tarihi, özel bir sayı vs. */
+const ENTRY_CODE = "2007";      // Giriş ekranındaki özel kod
+const CLOCK_CODE  = "1520";     // Telefonda görünen saat
+const SAFE_CODE   = "2708";     // Kitap seviyelerinden çıkan kod (C2 A7 A0 C8)
+
+/* ============ DURUM ============ */
+let state = {
+  sawPhone:false, clockSolved:false, sawRadiatorPaper:false, sawBooks:false,
+  safeOpen:false, hasKey:false
+};
+let inventory = [];
+
+function renderInventory(){
+  document.getElementById('inventory').innerHTML = inventory.map(i=>`<span>${i}</span>`).join('');
+}
+
+/* ============ DUYGUSAL / UX YARDIMCILAR ============ */
+function vib(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+function shakeInput(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  vib(60); playTone(180,180,'sawtooth');
+}
+function updateProgress(){
+  const total = 4;
+  const flags = [state.clockSolved, state.sawRadiatorPaper, state.sawBooks, state.safeOpen];
+  const done = flags.filter(Boolean).length;
+  const overlay = document.getElementById('light-overlay');
+  if(overlay) overlay.style.opacity = Math.max(0.3 - (done/total)*0.3, 0);
+  const icons = ['🕐','♨️','📚','🔒'];
+  const dots = document.getElementById('progress-dots');
+  if(dots) dots.innerHTML = icons.map((ic,i)=>`<span class="${flags[i]?'done':''}">${ic}</span>`).join('');
+}
+function resetRoomState(){
+  state = { sawPhone:false, clockSolved:false, sawRadiatorPaper:false, sawBooks:false, safeOpen:false, hasKey:false };
+  inventory = [];
+  wallIndex = 0;
+  lampOn = false;
+  const lampBtn = document.getElementById('lamp-btn');
+  if(lampBtn) lampBtn.style.filter = 'none';
+}
+
+/* ============ SES ============ */
+function playTone(freq, dur, type){
+  try{
+    const ctx = window._actx || (window._actx = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type||'sine'; o.frequency.value = freq;
+    g.gain.value = 0.08;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur/1000);
+    o.stop(ctx.currentTime + dur/1000);
+  }catch(e){}
+}
+function playSuccess(){ playTone(660,110,'sine'); setTimeout(()=>playTone(880,160,'sine'),110); }
+
+/* ============ LAMBA (manuel aydınlatma) ============ */
+let lampOn = false;
+function toggleLamp(){
+  lampOn = !lampOn;
+  document.getElementById('lamp-btn').style.filter = lampOn ? 'drop-shadow(0 0 6px gold)' : 'none';
+  if(lampOn){ document.getElementById('light-overlay').style.opacity = 0; }
+  else { updateProgress(); }
+  vib(10);
+}
+
+/* ============ İPUCU ============ */
+function toggleHint(id){
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('show');
+  vib(10);
+}
+function spawnConfetti(){
+  const colors = ['#e8c27a','#c98fe0','#7ae0a0','#e07a7a','#8a5cc4'];
+  const wrap = document.getElementById('final');
+  for(let i=0;i<26;i++){
+    const c = document.createElement('span');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + '%';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (2.5 + Math.random()*2) + 's';
+    c.style.animationDelay = (Math.random()*1.2) + 's';
+    wrap.appendChild(c);
+  }
+}
+function showLetter(){
+  document.getElementById('letter').classList.remove('hidden');
+  vib(20);
+}
+
+/* ============ EKRAN GEÇİŞLERİ ============ */
+const TOP_SCREENS = ['screen-menu','screen-entry','screen-start','room','cauldron','final'];
+function goTo(id){
+  TOP_SCREENS.forEach(s=>{ const el = document.getElementById(s); if(el) el.classList.add('hidden'); });
+  document.getElementById(id).classList.remove('hidden');
+}
+
+/* ============ GİRİŞ ============ */
+function checkEntry(){
+  const val = document.getElementById('entry-input').value.trim();
+  if(val === ENTRY_CODE){
+    goTo('screen-start');
+  } else {
+    document.getElementById('entry-error').textContent = "Kod yanlış, tekrar dene 💭";
+    shakeInput('entry-input');
+  }
+}
+function enterRoom(){
+  goTo('room');
+  resetRoomState();
+  renderInventory();
+  updateProgress();
+  updateWalls();
+}
+
+/* ============ MODAL YARDIMCI ============ */
+function showModal(html){
+  document.getElementById('modal').innerHTML = `<button class="close-x" onclick="closeModal()">✕</button>` + html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.add('hidden'); }
+
+/* ============ TELEFON ============ */
+function bedMessage(){
+  showModal(`<div class="icon">🛏️</div><div class="msg">Şimdi yatma zamanı değil...<br>gerçi benim için yatmanın hiç vakti yok ama neyse.</div>`);
+}
+function phoneFrame(inner){
+  return `<div class="phone-mock"><div class="status"><span>●●●</span><span>🔋</span></div><div class="wallpaper"></div>${inner}</div>`;
+}
+function openPhone(){
+  if(!state.sawPhone){
+    state.sawPhone = true;
+    showModal(phoneFrame(`<div class="notif-bubble">💬 Ah canım telefonum, uzay çağına çıkardın.</div>`)
+      + `<button class="btn-secondary" onclick="showClockOnPhone()">Kilidi aç</button>`);
+  } else {
+    showClockOnPhone();
+  }
+}
+function showClockOnPhone(){
+  showModal(phoneFrame(
+    `<div class="time">${CLOCK_CODE.slice(0,2)}:${CLOCK_CODE.slice(2)}</div>
+     <div class="date">Bugün</div>
+     <div class="lockrow">🔒</div>
+     <div class="swipe">açmak için kaydır</div>`)
+    + `<div class="msg" style="font-size:13px; color:#bba8d4; margin-top:12px;">Odanın saati de bozuktu, iyi ki öğrendim.</div>`);
+}
+
+/* ============ SAAT ============ */
+function openClock(){
+  if(state.clockSolved){
+    showModal(`<div class="icon">📄</div><div class="paper">"Iğdır insanı da sıcak, havası da...<br>Bu odada sıcak olan ne var?"</div>`);
+    return;
+  }
+  showModal(`<div class="icon">🕐</div><div class="msg">Saatin kilidi var.<br>Telefonda gördüğün saati gir.</div>
+    <input id="clock-input" class="code-input" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+    <div class="error-msg" id="clock-error"></div>
+    <div class="row"><button class="primary" onclick="checkClock()">GİR</button></div>
+    <button class="hint-link" onclick="toggleHint('clock-hint')">💡 İpucu</button>
+    <div class="hint-text" id="clock-hint">Telefonun kilit ekranına tekrar bakmayı dene.</div>`);
+}
+function checkClock(){
+  const val = document.getElementById('clock-input').value.trim();
+  if(val === CLOCK_CODE){
+    state.clockSolved = true; updateProgress(); vib(15); playSuccess();
+    showModal(`<div class="icon">✨</div><div class="msg">Saatten gerçek bir kağıt düştü.</div>
+      <div class="paper">"Iğdır insanı da sıcak, havası da...<br>Bu odada sıcak olan ne var?"</div>
+      <div class="msg" style="font-size:13px; color:#bba8d4;">Seninle geçen saatler hep en hızlı geçenler oldu ⏳❤️</div>`);
+  } else {
+    document.getElementById('clock-error').textContent = "Yanlış, tekrar dene";
+    shakeInput('clock-input');
+  }
+}
+
+/* ============ KALORİFER ============ */
+function openRadiator(){
+  state.sawRadiatorPaper = true; updateProgress(); vib(15);
+  showModal(`<div class="icon">♨️</div><div class="msg">Hafif bir sıcaklık hissettin.</div>
+    <div class="paper">"Ders çalışmak için maalesef başına geçtiğimiz yer..."</div>
+    <div class="msg" style="font-size:13px; color:#bba8d4;">kışın üşüdüğümde iyiki vardın 🔥</div>`);
+}
+
+/* ============ KİTAPLAR ============ */
+function openBooks(){
+  state.sawBooks = true; updateProgress();
+  showModal(`<div class="icon">📚</div>
+    <div class="msg" style="text-align:left; line-height:1.9;">
+      📕 İNGİLİZCE — C2<br>
+      📘 ALMANCA — A7<br>
+      📗 FRANSIZCA — A0<br>
+      📙 KÜRTÇE — C8
+    </div>
+    <div class="msg" style="font-size:13px; color:#bba8d4;">Seviyelerin rakamlarını sırayla al...</div>
+    <div class="msg" style="font-size:13px; color:#bba8d4;">Sen bunca dil öğrenirken, ben de öğrenmeye çalıştım ama galiba boşuna iddalaştım seni geçerim diye fransızcada :) 📖</div>`);
+}
+
+/* ============ KASA ============ */
+function openSafe(){
+  if(state.safeOpen){
+    showModal(`<div class="icon">🔓</div><div class="msg">Kasa zaten açık. Anahtar sende.</div>`);
+    return;
+  }
+  showModal(`<div class="icon">🔒</div><div class="msg">Kilitli.<br>Dört haneli kodu gir.</div>
+    <input id="safe-input" class="code-input" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+    <div class="error-msg" id="safe-error"></div>
+    <div class="row"><button class="primary" onclick="checkSafe()">AÇ</button></div>
+    <button class="hint-link" onclick="toggleHint('safe-hint')">💡 İpucu</button>
+    <div class="hint-text" id="safe-hint">Kitapların üstündeki seviyelerin rakamlarını sırayla yaz: harf değil, sadece sayı.</div>`);
+}
+function checkSafe(){
+  const val = document.getElementById('safe-input').value.trim();
+  if(val === SAFE_CODE){
+    state.safeOpen = true; state.hasKey = true; updateProgress(); vib(15); playSuccess();
+    inventory.push('🔑'); renderInventory();
+    showModal(`<div class="icon">🔓</div><div class="msg">Kutu açıldı!<br>İçinden bir anahtar çıktı.</div>
+      <div class="msg">🔑 Anahtarı buldun. Artık kapıya gidebilirsin.</div>
+      <div class="msg" style="font-size:13px; color:#bba8d4;">Kalbimin kilidini de zaten sen çoktan açmıştın 🔑❤️</div>`);
+  } else {
+    document.getElementById('safe-error').textContent = "Yanlış kod";
+    shakeInput('safe-input');
+  }
+}
+
+/* ============ KAPI ============ */
+function openDoor(){
+  if(!state.hasKey){
+    showModal(`<div class="icon">🚪</div><div class="msg">Kapı kilitli. Önce anahtarı bulmalısın.</div>`);
+    return;
+  }
+  showModal(`<div class="icon">🔑</div><div class="msg">Klik... kilit açıldı.</div>
+    <div class="msg" style="font-size:13px; color:#bba8d4;">Bu kapının ardında seninle kurduğumuz onca an var...</div>
+    <div class="row"><button class="primary" onclick="goFinal()">KAPIYI AÇ</button></div>`);
+}
+function goFinal(){
+  closeModal(); vib([20,40,20]); playTone(520,300,'sine');
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '1';
+  setTimeout(()=>{
+    document.getElementById('room').classList.add('hidden');
+    document.getElementById('final').classList.remove('hidden');
+    spawnConfetti();
+    setTimeout(()=>{ flash.style.opacity = '0'; }, 120);
+  }, 480);
+}
+
+renderInventory();
+
+/* ============ SÜRPRİZ KAZANI ============ */
+const ITEM_NAMES = {S:'Uyku',E:'İngilizce',H:'Kalpli bot',B:'Güzellik',G:'İyilik'};
+const COMBOS = {
+  'H,S':'Kalpli bot giymiş uyuyan bebek 👶❤️',
+  'B,E':'İngilizce kitabı okurken makyaj yapan karakter 📖💄',
+  'G,H':'Kalpli botlu iyilik meleği 👼❤️',
+  'G,S':'Uyuyan küçük melek 😴👼',
+  'E,G':'İngilizce kitap dağıtan iyilik meleği 📚👼',
+  'B,S':'Uyurken güzellik maskesi yapan karakter 😴💆',
+  'E,S':'İngilizce kitabını okurken uyuyakalan karakter 📖😴',
+  'E,H':'Kalpli botlarıyla İngilizce çalışan karakter ❤️📖',
+  'B,G':'Hem güzel hem iyilikle parlayan karakter 💄😇',
+  'B,H':'Güzellik maskesi takmış, kalpli botlu karakter 💄❤️',
+  'G,H,S':'Kalpli botlu uyuyan melek 👼❤️😴',
+  'B,E,H':'İngilizce kitabı, makyaj çantası ve kalpli botları olan karakter 📖💄❤️',
+  'E,G,S':'İngilizce kitabına sarılıp uyuyan melek 📖👼😴',
+  'B,G,H':'Kalpli botlu, süslü iyilik meleği ❤️👼💄',
+  'E,H,S':'Kalpli botlarıyla İngilizce kitabına yaslanıp uykuya dalan karakter 📖❤️😴',
+  'B,E,S':'Güzellik maskesiyle İngilizce kitabı başında uyuyakalan karakter 💄📖😴',
+  'B,H,S':'Kalpli botlu, güzellik maskeli uyuyan karakter ❤️💄😴',
+  'B,G,S':'Güzellik maskeli, iyilik dolu uyuyan melek 💄👼😴',
+  'E,G,H':'Kalpli botlu, İngilizce kitap dağıtan iyilik meleği ❤️📖👼',
+  'B,E,G':'İngilizce kitabı ve makyaj çantasıyla iyilik dağıtan karakter 📖💄👼',
+  'B,E,H,S':'İngilizce kitabı okurken uyuyakalmış, kalpli botlu ve yüzünde güzellik maskesi olan karakter 📖❤️💄😴',
+  'B,G,H,S':'Kalpli botlu, güzellik maskeli uyuyan melek ❤️💄👼😴',
+  'B,E,G,H':'İngilizce kitabı taşıyan, kalpli botlu güzellik meleği 📖❤️💄👼',
+  'B,E,G,S':'Güzellik maskeli, İngilizce kitaplı, iyilik dolu uyuyan melek 💄📖👼😴',
+  'E,G,H,S':'Kalpli botlu, İngilizce kitaplı uyuyan iyilik meleği ❤️📖👼😴'
+};
+const ITEM_EMOJI = {S:'😴',E:'🇬🇧',H:'❤️',B:'💄',G:'😇'};
+let cauldronSet = new Set();
+function comboKey(){ return Array.from(cauldronSet).sort().join(','); }
+function renderPotIcons(){
+  const el = document.getElementById('pot-icons');
+  if(el) el.innerHTML = Array.from(cauldronSet).map(k=>`<span class="pot-icon">${ITEM_EMOJI[k]}</span>`).join('');
+}
+const CHAR_SVG = `
+<svg id="char" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+  <path class="wings" d="M14,58 Q-4,50 6,74 Q16,86 28,78 Z" fill="#f3e9ff" opacity=".85"/>
+  <path class="wings" d="M76,58 Q94,50 84,74 Q74,86 62,78 Z" fill="#f3e9ff" opacity=".85"/>
+  <ellipse class="halo-ring" cx="45" cy="13" rx="15" ry="5" fill="none" stroke="#e8c27a" stroke-width="2.4"/>
+  <rect class="plain-boot" x="29" y="97" width="11" height="10" rx="3" fill="#6a4530"/>
+  <rect class="plain-boot" x="50" y="97" width="11" height="10" rx="3" fill="#6a4530"/>
+  <g class="heart-boot">
+    <rect x="29" y="97" width="11" height="10" rx="3" fill="#d9577a"/>
+    <rect x="50" y="97" width="11" height="10" rx="3" fill="#d9577a"/>
+    <path d="M34.5,100 c-1.4,-1.6 -4,-0.2 -2.2,1.8 c0.9,1 2.2,2 2.2,2 s1.3,-1 2.2,-2 c1.8,-2 -0.8,-3.4 -2.2,-1.8 Z" fill="#fff"/>
+    <path d="M55.5,100 c-1.4,-1.6 -4,-0.2 -2.2,1.8 c0.9,1 2.2,2 2.2,2 s1.3,-1 2.2,-2 c1.8,-2 -0.8,-3.4 -2.2,-1.8 Z" fill="#fff"/>
+  </g>
+  <path d="M26,68 Q45,58 64,68 L61,99 Q45,106 29,99 Z" fill="#8a5cc4"/>
+  <rect class="book" x="33" y="72" width="24" height="18" rx="2" fill="#e8c27a" stroke="#a8843e" stroke-width="1.5"/>
+  <line class="book" x1="45" y1="72" x2="45" y2="90" stroke="#a8843e" stroke-width="1.2"/>
+  <circle cx="45" cy="38" r="21" fill="#f5d6b8"/>
+  <path d="M22,34 Q24,10 45,12 Q68,10 68,34 Q66,20 45,20 Q24,20 22,34 Z" fill="#2a1f3a"/>
+  <path d="M23,33 Q18,52 27,62 Q20,48 25,33 Z" fill="#2a1f3a"/>
+  <path d="M67,33 Q72,52 63,62 Q70,48 65,33 Z" fill="#2a1f3a"/>
+  <ellipse class="blush" cx="33" cy="42" rx="4" ry="2.4" fill="#e8859f" opacity=".45"/>
+  <ellipse class="blush" cx="57" cy="42" rx="4" ry="2.4" fill="#e8859f" opacity=".45"/>
+  <g class="eyes-open">
+    <ellipse cx="38" cy="37" rx="2.1" ry="2.8" fill="#2a1f3a"/>
+    <ellipse cx="52" cy="37" rx="2.1" ry="2.8" fill="#2a1f3a"/>
+  </g>
+  <g class="eyes-closed">
+    <path d="M35,37 Q38,40 41,37" stroke="#2a1f3a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M49,37 Q52,40 55,37" stroke="#2a1f3a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M41,46 Q45,49 49,46" stroke="#b05a6a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <g class="zzz">
+    <text x="60" y="16" font-size="9" fill="#cbb8e0" font-family="sans-serif">z</text>
+    <text x="66" y="9" font-size="7" fill="#cbb8e0" font-family="sans-serif">z</text>
+  </g>
+  <g class="sparkle" fill="#e8c27a">
+    <path d="M18,26 l1.6,3.6 L23,31 l-3.4,1.4 L18,36 l-1.6,-3.6 L13,31 l3.4,-1.4 Z"/>
+    <path d="M70,24 l1.2,2.6 L74,28 l-2.6,1 L70,32 l-1.2,-2.6 L66,28 l2.6,-1 Z"/>
+  </g>
+</svg>`;
+function updateCharacter(){
+  const el = document.getElementById('pot-combo');
+  if(!el) return;
+  const n = cauldronSet.size;
+  if(n === 0){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  if(!el.querySelector('#char')){ el.innerHTML = `<div class="combo-badge"><div class="ambhalo"></div>${CHAR_SVG}</div>`; }
+  el.style.display = 'flex';
+  ['S','E','H','B','G'].forEach(k=> el.classList.toggle('has-'+k, cauldronSet.has(k)));
+}
+function updateCauldronResult(){
+  const n = cauldronSet.size;
+  const card = document.getElementById('cauldron-result');
+  const pot = document.getElementById('pot');
+  if(n===0){ card.textContent = 'Kazan boş... bir şeyler at! 👀'; pot.classList.remove('active'); updateCharacter(); return; }
+  pot.classList.add('active');
+  if(n===1){ card.textContent = ITEM_NAMES[Array.from(cauldronSet)[0]] + ' kazana atıldı, devam et...'; updateCharacter(); return; }
+  if(n===5){ card.textContent = 'Hepsi kazanda! ✨'; updateCharacter(); triggerFinale(); return; }
+  card.textContent = COMBOS[comboKey()] || 'Yeni bir karışım oluşuyor...';
+  updateCharacter();
+}
+function addToItemSet(key){
+  if(cauldronSet.has(key)) return;
+  cauldronSet.add(key);
+  const chip = document.querySelector(`.item-chip[data-key="${key}"]`);
+  if(chip) chip.classList.add('used');
+  vib(15); playTone(520,90,'sine');
+  renderPotIcons();
+  updateCauldronResult();
+}
+function resetCauldron(){
+  cauldronSet.clear();
+  document.querySelectorAll('.item-chip').forEach(c=>c.classList.remove('used'));
+  document.getElementById('finale').classList.add('hidden');
+  document.getElementById('pot').classList.remove('active');
+  document.getElementById('pot-icons').innerHTML = '';
+  const pc = document.getElementById('pot-combo');
+  pc.innerHTML = ''; pc.className = ''; pc.style.display = 'none';
+  updateCauldronResult();
+}
+function triggerFinale(){
+  vib([30,50,30,50,80]); playSuccess();
+  setTimeout(()=>{
+    const fin = document.getElementById('finale');
+    fin.classList.remove('hidden');
+    fin.innerHTML = `<div class="burst"></div><div class="burst" style="animation-delay:.15s;"></div>
+      <div style="font-size:50px; position:relative;">✨👑✨</div>
+      <h1>ZÜLÜ ortaya çıktı!</h1>
+      <p style="position:relative; color:#e8d8f8; max-width:280px;">Profesör o karışımla Powerpuff Girls’ü ortaya çıkardı, ben de bütün güzel şeyleri bir kazanda topladım… Ama ortaya çıkacak şeyin sen kadar güzel olacağını bilmiyordum. 🥹💗(tasarım cok kötü </p>
+      <button class="primary" style="position:relative; margin-top:16px;" onclick="goTo('screen-menu')">Menüye Dön</button>`;
+  }, 900);
+}
+function initDrag(){
+  document.querySelectorAll('.item-chip').forEach(chip=>{
+    chip.addEventListener('pointerdown', e=>{
+      if(chip.classList.contains('used')) return;
+      e.preventDefault();
+      chip.setPointerCapture(e.pointerId);
+      const rect = chip.getBoundingClientRect();
+      const offX = e.clientX - rect.left, offY = e.clientY - rect.top;
+      chip.classList.add('dragging');
+      chip.style.position = 'fixed'; chip.style.left = rect.left+'px'; chip.style.top = rect.top+'px'; chip.style.margin = '0';
+      function move(ev){ chip.style.left = (ev.clientX-offX)+'px'; chip.style.top = (ev.clientY-offY)+'px'; }
+      function up(ev){
+        chip.removeEventListener('pointermove', move);
+        chip.removeEventListener('pointerup', up);
+        chip.classList.remove('dragging');
+        const pot = document.getElementById('pot').getBoundingClientRect();
+        const hit = ev.clientX > pot.left-25 && ev.clientX < pot.right+25 && ev.clientY > pot.top-25 && ev.clientY < pot.bottom+25;
+        if(hit){
+          chip.style.transition = 'opacity .3s, transform .3s';
+          chip.style.opacity = '0'; chip.style.transform = 'scale(.3)';
+          setTimeout(()=>{
+            chip.style.position=''; chip.style.left=''; chip.style.top=''; chip.style.margin='';
+            chip.style.transition=''; chip.style.opacity=''; chip.style.transform='';
+            addToItemSet(chip.dataset.key);
+          }, 260);
+        } else {
+          chip.style.position=''; chip.style.left=''; chip.style.top=''; chip.style.margin='';
+        }
+      }
+      chip.addEventListener('pointermove', move);
+      chip.addEventListener('pointerup', up);
+    });
+  });
+}
+initDrag();
+
+/* ============ DUVAR GEZİNMESİ ============ */
+let wallIndex = 0;
+const totalWalls = 3;
+function updateWalls(){
+  document.getElementById('walls-track').style.transform = `translateX(-${wallIndex * 33.333}%)`;
+  document.querySelectorAll('#wall-dots .dot').forEach((d,i)=> d.classList.toggle('active', i===wallIndex));
+  document.getElementById('arrow-left').disabled = wallIndex === 0;
+  document.getElementById('arrow-right').disabled = wallIndex === totalWalls - 1;
+}
+function goWall(dir){
+  const next = wallIndex + dir;
+  if(next < 0 || next >= totalWalls) return;
+  wallIndex = next;
+  updateWalls();
+}
+document.getElementById('room').addEventListener('touchstart', e=>{
+  window._touchStartX = e.changedTouches[0].clientX;
+}, {passive:true});
+document.getElementById('room').addEventListener('touchend', e=>{
+  const dx = e.changedTouches[0].clientX - window._touchStartX;
+  if(Math.abs(dx) > 50) goWall(dx < 0 ? 1 : -1);
+}, {passive:true});
+updateWalls();
+</script>
+</body>
+</html>
